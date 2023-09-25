@@ -9,15 +9,15 @@ import (
 	//"log"
 
 	"fmt"
-	"solana-wallet/mintNFT"
+	"minting/mintNFT"
 
-	// "github.com/portto/solana-go-sdk/client"
-	// "github.com/portto/solana-go-sdk/program/sysprog"
-	// "github.com/portto/solana-go-sdk/rpc"
-	"github.com/portto/solana-go-sdk/types"
+	// "github.com/blocto/solana-go-sdk/client"
+	// "github.com/blocto/solana-go-sdk/program/sysprog"
+	// "github.com/blocto/solana-go-sdk/rpc"
+	"github.com/blocto/solana-go-sdk/types"
 )
 
-//var Alice = ("5TdJYb9AhEhSqLvAG4MPJddHHQSX4breqCSWnx2Ast5k")
+// var Alice = ("5TdJYb9AhEhSqLvAG4MPJddHHQSX4breqCSWnx2Ast5k")
 var AliceSK, _ = types.AccountFromBytes([]byte{162, 128, 223, 203, 33, 217, 35, 50, 114, 79, 106, 50, 93, 174, 66, 2, 47, 22, 191, 158, 233, 41, 109, 52, 49, 255, 214, 3, 3, 182, 50, 185, 2, 212, 203, 14, 73, 174, 65, 37, 136, 138, 5, 84, 53, 62, 136, 198, 69, 3, 211, 0, 20, 214, 9, 140, 211, 24, 14, 197, 109, 104, 35, 65})
 
 func main() {

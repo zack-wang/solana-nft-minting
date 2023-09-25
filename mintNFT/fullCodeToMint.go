@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/portto/solana-go-sdk/client"
-	"github.com/portto/solana-go-sdk/common"
-	"github.com/portto/solana-go-sdk/pkg/pointer"
-	"github.com/portto/solana-go-sdk/program/assotokenprog"
-	"github.com/portto/solana-go-sdk/program/metaplex/tokenmeta"
-	"github.com/portto/solana-go-sdk/program/sysprog"
-	"github.com/portto/solana-go-sdk/program/tokenprog"
-	"github.com/portto/solana-go-sdk/rpc"
-	"github.com/portto/solana-go-sdk/types"
+	"github.com/blocto/solana-go-sdk/client"
+	"github.com/blocto/solana-go-sdk/common"
+	"github.com/blocto/solana-go-sdk/program/associated_token_account"
+	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
+	"github.com/blocto/solana-go-sdk/program/system"
+	"github.com/blocto/solana-go-sdk/program/token"
+	"github.com/blocto/solana-go-sdk/rpc"
+	"github.com/blocto/solana-go-sdk/types"
 )
 
 // FUarP2p5EnxD66vVDL4PWRoWMzA56ZVHG24hpEDFShEz
@@ -36,46 +35,46 @@ func MainCode() (string, string, error) {
 	}
 	var source = ata.ToBase58()
 
-	tokenMetadataPubkey, err := tokenmeta.GetTokenMetaPubkey(mint.PublicKey)
+	tokenMetadataPubkey, err := token_metadata.GetTokenMetaPubkey(mint.PublicKey)
 	if err != nil {
 		log.Fatalf("failed to find a valid token metadata, err: %v", err)
 
 	}
 
-	tokenMasterEditionPubkey, err := tokenmeta.GetMasterEdition(mint.PublicKey)
+	tokenMasterEditionPubkey, err := token_metadata.GetMasterEdition(mint.PublicKey)
 	if err != nil {
 		log.Fatalf("failed to find a valid master edition, err: %v", err)
 	}
 
-	mintAccountRent, err := c.GetMinimumBalanceForRentExemption(context.Background(), tokenprog.MintAccountSize)
+	mintAccountRent, err := c.GetMinimumBalanceForRentExemption(context.Background(), token.MintAccountSize)
 	if err != nil {
 		log.Fatalf("failed to get mint account rent, err: %v", err)
 	}
 
-	recentBlockhashResponse, err := c.GetRecentBlockhash(context.Background())
+	recentBlockhashResponse, err := c.GetLatestBlockhash(context.Background())
 	if err != nil {
 		log.Fatalf("failed to get recent blockhash, err: %v", err)
 	}
-
+	u64zero := uint64(0)
 	tx, err := types.NewTransaction(types.NewTransactionParam{
 		Signers: []types.Account{mint, feePayer},
 		Message: types.NewMessage(types.NewMessageParam{
 			FeePayer:        feePayer.PublicKey,
 			RecentBlockhash: recentBlockhashResponse.Blockhash,
 			Instructions: []types.Instruction{
-				sysprog.CreateAccount(sysprog.CreateAccountParam{
+				system.CreateAccount(system.CreateAccountParam{
 					From:     feePayer.PublicKey,
 					New:      mint.PublicKey,
 					Owner:    common.TokenProgramID,
 					Lamports: mintAccountRent,
-					Space:    tokenprog.MintAccountSize,
+					Space:    token.MintAccountSize,
 				}),
-				tokenprog.InitializeMint(tokenprog.InitializeMintParam{
+				token.InitializeMint(token.InitializeMintParam{
 					Decimals: 0,
 					Mint:     mint.PublicKey,
 					MintAuth: feePayer.PublicKey,
 				}),
-				tokenmeta.CreateMetadataAccount(tokenmeta.CreateMetadataAccountParam{
+				token_metadata.CreateMetadataAccount(token_metadata.CreateMetadataAccountParam{
 					Metadata:                tokenMetadataPubkey,
 					Mint:                    mint.PublicKey,
 					MintAuthority:           feePayer.PublicKey,
@@ -83,12 +82,12 @@ func MainCode() (string, string, error) {
 					UpdateAuthority:         feePayer.PublicKey,
 					UpdateAuthorityIsSigner: true,
 					IsMutable:               false,
-					MintData: tokenmeta.Data{
+					MintData: token_metadata.Data{
 						Name:                 "Tracified NFT",
 						Symbol:               "Kels",
 						Uri:                  "https://tillit-explorer.netlify.app/proof-verification?type=pobl&txn=241bf3d832f9f73efd66abc1468b7ab10364c46aeb473fd4638f31043f976585",
 						SellerFeeBasisPoints: 500,
-						Creators: &[]tokenmeta.Creator{
+						Creators: &[]token_metadata.Creator{
 							{
 								Address:  feePayer.PublicKey,
 								Verified: true,
@@ -97,27 +96,27 @@ func MainCode() (string, string, error) {
 						},
 					},
 				}),
-				assotokenprog.CreateAssociatedTokenAccount(assotokenprog.CreateAssociatedTokenAccountParam{
+				associated_token_account.CreateAssociatedTokenAccount(associated_token_account.CreateAssociatedTokenAccountParam{
 					Funder:                 feePayer.PublicKey,
 					Owner:                  feePayer.PublicKey,
 					Mint:                   mint.PublicKey,
 					AssociatedTokenAccount: ata,
 				}),
-				tokenprog.MintTo(tokenprog.MintToParam{
+				token.MintTo(token.MintToParam{
 					Mint:   mint.PublicKey,
 					To:     ata,
 					Auth:   feePayer.PublicKey,
 					Amount: 1,
 				}),
 
-				tokenmeta.CreateMasterEdition(tokenmeta.CreateMasterEditionParam{
+				token_metadata.CreateMasterEdition(token_metadata.CreateMasterEditionParam{
 					Edition:         tokenMasterEditionPubkey,
 					Mint:            mint.PublicKey,
 					UpdateAuthority: feePayer.PublicKey,
 					MintAuthority:   feePayer.PublicKey,
 					Metadata:        tokenMetadataPubkey,
 					Payer:           feePayer.PublicKey,
-					MaxSupply:       pointer.Uint64(0),
+					MaxSupply:       &u64zero,
 				}),
 			},
 		}),
